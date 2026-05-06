@@ -1,12 +1,13 @@
-#ifndef FAULT_MANAGER_H_
-#define FAULT_MANAGER_H_
+#ifndef APP_FAULT_MANAGER_H_
+#define APP_FAULT_MANAGER_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../Utils/std_types.h"
+#include "../System_Config.h"
 
-// Function Prototypes
+/* Functions Prototypes */
 void FaultManager_Init(void);
 void FaultManager_LogFault(DTC_Code_t dtc);
-void FaultManager_RetrieveAll(void);
+void FaultManager_PrintLogs(void);
+void FaultManager_ClearLogs(void);
 
-#endif /* FAULT_MANAGER_H_ */
+#endif /* APP_FAULT_MANAGER_H_ */

@@ -1,13 +1,20 @@
-#ifndef UART_H_
-#define UART_H_
+#ifndef MCAL_UART_H_
+#define MCAL_UART_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../Utils/std_types.h"
+#include "../Utils/common_macros.h"
+#include "../System_Config.h"
 
-// Function Prototypes
-void UART_Init(void);
-void UART_SendByte(uint8 data);
-void UART_SendString(const uint8 *str);
-uint8 UART_ReceiveByte(void);
+/* Functions Prototypes for UART0 (PC Terminal) */
+void UART0_Init(void);
+void UART0_SendByte(uint8 data);
+void UART0_SendString(const uint8 *Str);
+uint8 UART0_Available(void);
+uint8 UART0_ReceiveByte(void);
 
-#endif /* UART_H_ */
+/* Functions Prototypes for UART1 (ESP32-CAM) */
+void UART1_Init(void);
+void UART1_SendByte(uint8 data);
+void UART1_SendString(const uint8 *Str);
+
+#endif /* MCAL_UART_H_ */

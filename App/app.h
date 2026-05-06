@@ -1,13 +1,10 @@
 #ifndef APP_H_
 #define APP_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../System_Config.h"
 
-// Function Prototypes
+/* Main Application Functions */
 void App_Init(void);
-void App_Start(void);
-void App_Update(void);
-void App_Stop(void);
+void App_Run(void);
 
 #endif /* APP_H_ */

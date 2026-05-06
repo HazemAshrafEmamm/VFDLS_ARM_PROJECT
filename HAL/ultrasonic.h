@@ -1,11 +1,9 @@
-#ifndef ULTRASONIC_H_
-#define ULTRASONIC_H_
+#ifndef HAL_ULTRASONIC_H_
+#define HAL_ULTRASONIC_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../Utils/std_types.h"
 
-// Function Prototypes
 void Ultrasonic_Init(void);
-uint32 Ultrasonic_GetDistance(void);
+uint16 Ultrasonic_GetDistance(void);
 
-#endif /* ULTRASONIC_H_ */
+#endif /* HAL_ULTRASONIC_H_ */

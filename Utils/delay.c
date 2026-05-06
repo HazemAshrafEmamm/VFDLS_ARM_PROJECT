@@ -1,12 +1,22 @@
 #include "delay.h"
-#include "System_Config.h" // بنستدعيه عشان نقرأ منه الـ SYSTEM_CLOCK_HZ بعدين
+#include "../MCAL/systick.h" /* Dependency on MCAL SysTick Driver */
 
-void Delay_ms(uint32 milliseconds) 
+/*
+ * Description : 
+ * Delay execution for a specific number of milliseconds.
+ */
+void Delay_ms(uint32 milliseconds)
 {
-    // TODO: Implement millisecond delay logic here
+    /* Call the MCAL SysTick function to handle the hardware waiting */
+    SysTick_Wait_ms(milliseconds);
 }
 
-void Delay_us(uint32 microseconds) 
+/*
+ * Description : 
+ * Delay execution for a specific number of microseconds.
+ */
+void Delay_us(uint32 microseconds)
 {
-    // TODO: Implement microsecond delay logic here
+    /* Call the MCAL SysTick function to handle the hardware waiting */
+    SysTick_Wait_us(microseconds);
 }

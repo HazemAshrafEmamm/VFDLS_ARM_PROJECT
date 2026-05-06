@@ -1,12 +1,12 @@
-#ifndef EEPROM_H_
-#define EEPROM_H_
+#ifndef MCAL_EEPROM_H_
+#define MCAL_EEPROM_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../Utils/std_types.h"
+#include "../Utils/common_macros.h"
+#include "../System_Config.h"
 
-// Function Prototypes
 void EEPROM_Init(void);
-void EEPROM_LogFault(DTC_Code_t dtc_code);
-void EEPROM_RetrieveAllFaults(void); 
+void EEPROM_WriteWord(uint16 block, uint16 offset, uint32 data);
+uint32 EEPROM_ReadWord(uint16 block, uint16 offset);
 
-#endif /* EEPROM_H_ */
+#endif /* MCAL_EEPROM_H_ */

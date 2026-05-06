@@ -1,11 +1,9 @@
-#ifndef TEMP_SENSOR_H_
-#define TEMP_SENSOR_H_
+#ifndef HAL_TEMP_SENSOR_H_
+#define HAL_TEMP_SENSOR_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../Utils/std_types.h"
 
-// Function Prototypes
 void TempSensor_Init(void);
-float32 TempSensor_Read(void);
+uint8 TempSensor_Read(void);
 
-#endif /* TEMP_SENSOR_H_ */
+#endif /* HAL_TEMP_SENSOR_H_ */

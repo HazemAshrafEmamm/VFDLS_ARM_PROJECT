@@ -1,17 +1,25 @@
 #include "temp_sensor.h"
+#include "../MCAL/adc0.h"
 
-void TempSensor_Init(void) 
+void TempSensor_Init(void)
 {
-    // TODO: Enable ADC0 peripheral and GPIOE
-    // TODO: Configure PE3 as AIN0 (Analog Input)
-    // TODO: Configure ADC0 Sequence 3, Processor Trigger, and enable it
+    ADC0_Init(); /* Initialize MCAL ADC */
 }
 
-float32 TempSensor_Read(void) 
+uint8 TempSensor_Read(void)
 {
-    // TODO: Trigger ADC conversion (ADCProcessorTrigger)
-    // TODO: Wait for conversion to complete (ADCIntStatus)
-    // TODO: Read the ADC value and clear the interrupt flag
-    // TODO: Convert the digital value to Temperature in Celsius (LM35 formula)
-    return 0.0; 
+    uint16 adc_value = 0;
+    uint8 temp_value = 0;
+
+    /* Read the analog value from the MCAL driver */
+    adc_value = ADC0_ReadChannel();
+
+    /* Calculate the temperature 
+     * Tiva C ADC is 12-bit (0-4095) with 3.3V reference.
+     * LM35 gives 10mV per degree Celsius.
+     * Temp = (ADC_Value * 3.3 * 100) / 4096 = (ADC_Value * 330) / 4096 
+     */
+    temp_value = (uint8)(((uint32)adc_value * 330) / 4096);
+
+    return temp_value;
 }

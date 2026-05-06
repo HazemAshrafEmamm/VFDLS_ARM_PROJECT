@@ -1,12 +1,18 @@
-#ifndef WINDOWS_CTRL_H_
-#define WINDOWS_CTRL_H_
+#ifndef HAL_WINDOWS_CTRL_H_
+#define HAL_WINDOWS_CTRL_H_
 
-#include "std_types.h"
-#include "System_Config.h"
+#include "../Utils/std_types.h"
 
-// Function Prototypes
-void Windows_Init(void);
-void Windows_Update(void);
-uint8 Windows_GetState(uint8 window_num); // Function to return state for LCD display
+/* Enum to track the window state */
+typedef enum {
+    WINDOW_CLOSED = 0,
+    WINDOW_OPEN
+} WindowState_t;
 
-#endif /* WINDOWS_CTRL_H_ */
+void WindowsCtrl_Init(void);
+void WindowsCtrl_Update(void);
+
+/* Getter function for the LCD to read window states */
+WindowState_t WindowsCtrl_GetState(uint8 window_num);
+
+#endif /* HAL_WINDOWS_CTRL_H_ */

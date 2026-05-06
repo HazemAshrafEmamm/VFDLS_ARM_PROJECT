@@ -29,6 +29,7 @@
 // - Set DEN for all digital pins (UART, I2C, Ultrasonic, Motors, Buttons)
 // - Clear DEN and set AMSEL for ADC pins (LM35)
 // ==========================================
+
 // ==========================================
 // 0. System Clock & Peripheral Enables (Unified)
 // ==========================================
