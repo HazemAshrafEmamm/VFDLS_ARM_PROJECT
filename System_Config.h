@@ -4,102 +4,118 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// TivaWare Includes
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
-#include "driverlib/pin_map.h"
-#include "driverlib/adc.h"
-#include "driverlib/eeprom.h"
-#include "driverlib/interrupt.h"
+// ==========================================
+// ⚠️ BARE METAL ARCHITECTURE NOTE:
+// No TivaWare (driverlib) allowed. 
+// Access memory-mapped registers directly using this standard header:
+// ==========================================
+#include "tm4c123gh6pm.h"
 
 // ==========================================
-// ⚠️ SYSTEM NOTE FOR THE TEAM:
-// Ensure SysCtlPeripheralEnable() is called 
-// for each peripheral before use!
+// Bit Mask Definitions for Register Manipulation
 // ==========================================
+#define BIT0                          (1U << 0)
+#define BIT1                          (1U << 1)
+#define BIT2                          (1U << 2)
+#define BIT3                          (1U << 3)
+#define BIT4                          (1U << 4)
+#define BIT5                          (1U << 5)
+#define BIT6                          (1U << 6)
+#define BIT7                          (1U << 7)
 
 // ==========================================
-// 0. System Clock Configuration
+// GENERAL PINS CONFIGURATION RULES:
+// - Set AFSEL for UART/I2C pins
+// - Set DEN for all digital pins (UART, I2C, Ultrasonic, Motors, Buttons)
+// - Clear DEN and set AMSEL for ADC pins (LM35)
 // ==========================================
-#define SYSTEM_CLOCK_HZ               16000000U // Default 16 MHz (Update if using PLL)
+// ==========================================
+// 0. System Clock & Peripheral Enables (Unified)
+// ==========================================
+#define SYSTEM_CLOCK_HZ               16000000U // Default 16 MHz 
+
+// GPIO Ports Clock Enables (SYSCTL_RCGCGPIO_R)
+#define GPIO_PORTA_CLK_EN             BIT0
+#define GPIO_PORTB_CLK_EN             BIT1
+#define GPIO_PORTC_CLK_EN             BIT2
+#define GPIO_PORTE_CLK_EN             BIT4
+
+// Peripherals Clock Enables
+#define UART0_CLK_EN                  BIT0    // SYSCTL_RCGCUART_R
+#define UART1_CLK_EN                  BIT1    // SYSCTL_RCGCUART_R
+#define I2C0_CLK_EN                   BIT0    // SYSCTL_RCGCI2C_R
+#define EEPROM_CLK_EN                 BIT0    // SYSCTL_RCGCEEPROM_R
+#define ADC0_CLK_EN                   BIT0    // SYSCTL_RCGCADC_R
+
+// ⚠️ CRITICAL TM4C123G REQUIREMENT:
+// Insert a 3-cycle dummy read delay after enabling any peripheral clock.
+// Usage in C file: SYSCTL_RCGCGPIO_R |= GPIO_PORTA_CLK_EN; INSERT_DUMMY_DELAY(SYSCTL_RCGCGPIO_R);
+#define INSERT_DUMMY_DELAY(REG)       do { volatile uint32_t delay = (REG); (void)delay; } while(0)
 
 // ==========================================
-// 1. UART0 & PC Terminal (Leader)
+// 1. UART0 & PC Terminal 
 // ==========================================
-#define TERMINAL_UART_BASE            UART0_BASE
-#define TERMINAL_UART_PERIPH          SYSCTL_PERIPH_UART0
-#define TERMINAL_GPIO_PERIPH          SYSCTL_PERIPH_GPIOA
-#define TERMINAL_GPIO_PORT_BASE       GPIO_PORTA_BASE
-#define TERMINAL_RX_PIN               GPIO_PIN_0
-#define TERMINAL_TX_PIN               GPIO_PIN_1
-#define TERMINAL_RX_CONFIG            GPIO_PA0_U0RX
-#define TERMINAL_TX_CONFIG            GPIO_PA1_U0TX
+// Using Port A
+#define TERMINAL_RX_PIN_MASK          BIT0    // PA0
+#define TERMINAL_TX_PIN_MASK          BIT1    // PA1
+// PCTL Values for UART0 (Clear mask: 0xFF)
+#define UART0_PCTL_PA0_U0RX           0x00000001
+#define UART0_PCTL_PA1_U0TX           0x00000010
 
 // ==========================================
-// 2. EEPROM (Leader)
+// 2. UART1 & ESP32-CAM (Bonus Feature)
 // ==========================================
-#define EEPROM_PERIPH                 SYSCTL_PERIPH_EEPROM0
+// Using Port B
+#define CAM_RX_PIN_MASK               BIT0    // PB0
+#define CAM_TX_PIN_MASK               BIT1    // PB1
+// PCTL Values for UART1 (Clear mask: 0xFF)
+#define UART1_PCTL_PB0_U1RX           0x00000001
+#define UART1_PCTL_PB1_U1TX           0x00000010
+// Protocol Alert Format
+#define ESP_ALERT_MSG_P001            "ALERT:P001\n"
 
 // ==========================================
-// 3. LCD with I2C0 (Hazem)
-// NOTE: SDA must be configured as open-drain in GPIOPinTypeI2C()
+// 3. LCD with I2C0 
 // ==========================================
-#define LCD_I2C_PERIPH                SYSCTL_PERIPH_I2C0
-#define LCD_I2C_GPIO_PERIPH           SYSCTL_PERIPH_GPIOB
-#define LCD_I2C_BASE                  I2C0_BASE
-#define LCD_I2C_GPIO_PORT_BASE        GPIO_PORTB_BASE
-#define LCD_I2C_SCL_PIN               GPIO_PIN_2
-#define LCD_I2C_SDA_PIN               GPIO_PIN_3
-#define LCD_I2C_SCL_CONFIG            GPIO_PB2_I2C0SCL
-#define LCD_I2C_SDA_CONFIG            GPIO_PB3_I2C0SDA
+// Using Port B
+#define LCD_I2C_SCL_PIN_MASK          BIT2    // PB2
+#define LCD_I2C_SDA_PIN_MASK          BIT3    // PB3 (Must set Open Drain ODR)
+// PCTL Values for I2C0 (Clear mask: 0xFF00)
+#define I2C0_PCTL_PB2_I2C0SCL         0x00000300
+#define I2C0_PCTL_PB3_I2C0SDA         0x00003000
 
 // ==========================================
-// 4. Engine Temperature - LM35 (Khaled)
-// Using AIN0 on PE3
+// 4. Engine Temperature - LM35 
 // ==========================================
-#define TEMP_SENSOR_GPIO_PERIPH       SYSCTL_PERIPH_GPIOE
-#define TEMP_SENSOR_GPIO_PORT_BASE    GPIO_PORTE_BASE
-#define TEMP_SENSOR_PIN               GPIO_PIN_3
-#define TEMP_SENSOR_ADC_PERIPH        SYSCTL_PERIPH_ADC0
-#define TEMP_SENSOR_ADC_BASE          ADC0_BASE
-#define TEMP_SENSOR_ADC_SEQ           3
-#define TEMP_SENSOR_ADC_STEP          0
-#define TEMP_SENSOR_ADC_TRIGGER       ADC_TRIGGER_PROCESSOR
-#define TEMP_SENSOR_ADC_CHANNEL       ADC_CTL_CH0 
+// Using Port E (AIN0 on PE3)
+#define TEMP_SENSOR_PIN_MASK          BIT3    // PE3
 
 // ==========================================
-// 5. Ultrasonic Sensor - HCSR04 (Salman)
-// NOTE: PC0-PC3 are reserved for JTAG. Using PC4-PC5 is safe.
+// 5. Ultrasonic Sensor - HCSR04 
 // ==========================================
-#define ULTRASONIC_GPIO_PERIPH        SYSCTL_PERIPH_GPIOC
-#define ULTRASONIC_GPIO_PORT_BASE     GPIO_PORTC_BASE
-#define ULTRASONIC_ECHO_PIN           GPIO_PIN_4
-#define ULTRASONIC_TRIG_PIN           GPIO_PIN_5
-#define ULTRASONIC_INT                INT_GPIOC
-#define ULTRASONIC_TRIG_DIR           GPIO_DIR_MODE_OUT
-#define ULTRASONIC_ECHO_DIR           GPIO_DIR_MODE_IN
-// NOTE FOR SALMAN: ISR must check if pin is HIGH (start timer) or LOW (stop timer)
-#define ULTRASONIC_ECHO_EDGE          GPIO_BOTH_EDGES
+// Using Port C (PC4, PC5)
+#define ULTRASONIC_ECHO_PIN_MASK      BIT4    // PC4 (Input)
+#define ULTRASONIC_TRIG_PIN_MASK      BIT5    // PC5 (Output)
+// Interrupt Configuration (NVIC)
+#define NVIC_EN0_PORTC_IRQ            2       // IRQ Number for Port C
+// NOTE: For Echo Pin Interrupt, configure GPIOIS, GPIOIBE, GPIOIEV for edge detection.
 
 // ==========================================
-// 6. Window DC Motors & Buttons (Arwa)
+// 6. Window DC Motors & Buttons 
 // ==========================================
-#define MOTORS_GPIO_PERIPH            SYSCTL_PERIPH_GPIOB
-#define MOTORS_GPIO_PORT_BASE         GPIO_PORTB_BASE
-#define MOTOR1_IN1                    GPIO_PIN_4
-#define MOTOR1_IN2                    GPIO_PIN_5
-#define MOTOR2_IN3                    GPIO_PIN_6
-#define MOTOR2_IN4                    GPIO_PIN_7
+// Motors: Using Port B
+#define MOTOR1_IN1_MASK               BIT4    // PB4 (Output)
+#define MOTOR1_IN2_MASK               BIT5    // PB5 (Output)
+#define MOTOR2_IN3_MASK               BIT6    // PB6 (Output)
+#define MOTOR2_IN4_MASK               BIT7    // PB7 (Output)
 
-#define BUTTONS_GPIO_PERIPH           SYSCTL_PERIPH_GPIOE
-#define BUTTONS_GPIO_PORT_BASE        GPIO_PORTE_BASE
-#define BTN_WIN1_UP                   GPIO_PIN_0
-#define BTN_WIN1_DOWN                 GPIO_PIN_1
-#define BTN_WIN2_UP                   GPIO_PIN_4
-#define BTN_WIN2_DOWN                 GPIO_PIN_5
-#define BUTTONS_INT                   INT_GPIOE
+// Buttons: Using Port E
+#define BTN_WIN1_UP_MASK              BIT0    // PE0 (Input + Pull-up)
+#define BTN_WIN1_DOWN_MASK            BIT1    // PE1 (Input + Pull-up)
+#define BTN_WIN2_UP_MASK              BIT4    // PE4 (Input + Pull-up)
+#define BTN_WIN2_DOWN_MASK            BIT5    // PE5 (Input + Pull-up)
+// Interrupt Configuration (NVIC)
+#define NVIC_EN0_PORTE_IRQ            4       // IRQ Number for Port E
 
 // ==========================================
 // 7. System Thresholds & Constants
