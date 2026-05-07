@@ -16,5 +16,8 @@ uint8 UART0_ReceiveByte(void);
 void UART1_Init(void);
 void UART1_SendByte(uint8 data);
 void UART1_SendString(const uint8 *Str);
+uint8 UART1_Available(void);     /* 🚨 دالة جديدة */
+uint8 UART1_ReceiveByte(void);   /* 🚨 دالة جديدة */
 
 #endif /* MCAL_UART_H_ */
+/* سطر فاضي هنا عشان الـ Warning يختفي */

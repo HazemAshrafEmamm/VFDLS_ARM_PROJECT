@@ -49,6 +49,7 @@ uint8 UART0_ReceiveByte(void)
     return UART0_DR_R;
 }
 
+
 void UART1_Init(void)
 {
     /* 1. Enable Clock for UART1 and Port B */
@@ -84,3 +85,16 @@ void UART1_SendString(const uint8 *Str)
         i++;
     }
 }
+
+/* 🚨 إضافة دوال الاستقبال لـ UART1 عشان الويب يقدر يتحكم في السيستم 🚨 */
+uint8 UART1_Available(void)
+{
+    return ((UART1_FR_R & 0x00000010) == 0); 
+}
+
+uint8 UART1_ReceiveByte(void)
+{
+    while((UART1_FR_R & 0x00000010) != 0); 
+    return UART1_DR_R;
+}
+/* سطر فاضي هنا عشان الـ Warning يختفي */

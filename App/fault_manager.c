@@ -35,7 +35,7 @@ void FaultManager_LogFault(DTC_Code_t dtc)
         UART0_SendString("\r\n[SYSTEM ALERT]: P001 - Collision Warning!\r\n");
         
         /* Trigger ESP32-CAM to take a photo */
-        //ESP32_CAM_TriggerCapture();
+        ESP32_CAM_TriggerCapture();
     }
     else if (dtc == DTC_ENGINE_HIGH_TEMP)
     {
